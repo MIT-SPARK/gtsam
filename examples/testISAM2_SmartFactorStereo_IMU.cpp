@@ -194,7 +194,7 @@ int main(int argc, char* argv[]) {
       static int i = 0u;
       std::cerr << "Compute state covariance: keyframe # " << i++;
 
-      graph.print("Graph Prior to Marginals!");
+      graph.print("Graph Prior to Marginals!\n");
 
       /// TEST MARGINALS .////////////////////////////////////////////////
       gtsam::Marginals marginals(smoother.getFactors(),
