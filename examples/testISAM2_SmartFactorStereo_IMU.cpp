@@ -196,11 +196,13 @@ int main(int argc, char* argv[]) {
 
       graph.print("New Graph Prior to Calculating Marginals!\n");
 
-      /// TEST MARGINALS .////////////////////////////////////////////////
+      //////////////////////////////////////////////////////////////////////////
+      // TEST MARGINALS: this fails if we don't add measurements to the smart
+      // factors
       gtsam::Marginals marginals(smoother.getFactors(),
-          currentEstimate,
-          gtsam::Marginals::Factorization::CHOLESKY);
-      ////////////////////////////////////////////////////////////////////////////////////////
+                                 currentEstimate,
+                                 gtsam::Marginals::Factorization::CHOLESKY);
+      //////////////////////////////////////////////////////////////////////////
 
       imu.propState = imu.preintegrated->predict(imu.prevState, imu.prevBias);
       imu.prevState = NavState(currentEstimate.at<Pose3>(X(lastFrame)),
