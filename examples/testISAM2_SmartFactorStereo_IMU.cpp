@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
   parameters.relinearizeThreshold = 0.1;
   ISAM2 isam(parameters);
 
-  static constexpr double horizon = 2.0;
+  static constexpr double horizon = 1000.0;
   auto smoother = gtsam::IncrementalFixedLagSmoother(horizon, parameters);
 
   // Create a factor graph
@@ -192,23 +192,14 @@ int main(int argc, char* argv[]) {
       Values currentEstimate = smoother.calculateEstimate();
 
       static int i = 0u;
-      std::cerr << "Compute state covariance: keyframe # " << i++;
+      std::cerr << "Compute state covariance: keyframe # " << i++ << '\n';
 
-      graph.print("Graph Prior to Marginals!\n");
+      graph.print("New Graph Prior to Calculating Marginals!\n");
 
       /// TEST MARGINALS .////////////////////////////////////////////////
       gtsam::Marginals marginals(smoother.getFactors(),
           currentEstimate,
           gtsam::Marginals::Factorization::CHOLESKY);
-
-      // Current state includes pose, velocity and imu biases.
-      gtsam::KeyVector keys;
-      keys.push_back(X(lastFrame));
-      keys.push_back(V(lastFrame));
-      keys.push_back(B(lastFrame));
-
-      marginals.jointMarginalCovariance(keys).fullMatrix();  // 6 + 3 + 6 = 15x15matrix
-
       ////////////////////////////////////////////////////////////////////////////////////////
 
       imu.propState = imu.preintegrated->predict(imu.prevState, imu.prevBias);
@@ -252,22 +243,22 @@ int main(int argc, char* argv[]) {
       ss >> xr;
       ss >> y;
 
-      if (smartFactors.count(landmark) == 0) {
-        auto gaussian = noiseModel::Isotropic::Sigma(3, 1.0);
+       if (smartFactors.count(landmark) == 0) {
+         auto gaussian = noiseModel::Isotropic::Sigma(3, 1.0);
 
-        SmartProjectionParams params(HESSIAN, ZERO_ON_DEGENERACY);
+         SmartProjectionParams params(HESSIAN, ZERO_ON_DEGENERACY);
 
-        smartFactors[landmark] = SmartStereoProjectionPoseFactor::shared_ptr(
-            new SmartStereoProjectionPoseFactor(gaussian, params));
-        graph.push_back(smartFactors[landmark]);
+         smartFactors[landmark] = SmartStereoProjectionPoseFactor::shared_ptr(
+             new SmartStereoProjectionPoseFactor(gaussian, params));
+         graph.push_back(smartFactors[landmark]);
 
-        landmark_to_first_timestamp[landmark] = frame;
-      }
+         landmark_to_first_timestamp[landmark] = frame;
+       }
 
 
-      // if (frame - landmark_to_first_timestamp[landmark] < horizon) {
-      //  smartFactors[landmark]->add(StereoPoint2(xl, xr, y), X(frame), K);
-      // }
+       // if (frame - landmark_to_first_timestamp[landmark] < horizon) {
+       //  smartFactors[landmark]->add(StereoPoint2(xl, xr, y), X(frame), K);
+       // }
     } else {
       throw runtime_error("unexpected data type: " + string(1, type));
     }
